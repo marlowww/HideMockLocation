@@ -1,0 +1,21 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="android:textColorPrimary">#fff</item>
+        <item name="colorSwitchThumbNormal">@color/colorDark</item>
+        <item name="android:actionMenuTextColor">#fff</item>
+        <item name="android:textColor">#fff</item>
+    </style>
+
+    <style name="AppTheme.ActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
+        <item name="android:actionMenuTextColor">#fff</item>
+        <item name="android:textColor">#fff</item>
+    </style>`
+
+</resources>
