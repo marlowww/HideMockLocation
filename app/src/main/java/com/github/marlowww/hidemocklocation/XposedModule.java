@@ -79,7 +79,8 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
                     "isFromMockProvider", hideMockProviderHook.init(lpparam.processName));
 
         // inform Activity that Xposed module is enabled
-        XposedHelpers.findAndHookMethod(Common.ACTIVITY_NAME, lpparam.classLoader, "isModuleEnabled", enableActivityHook);
+        if(lpparam.packageName.equals(Common.PACKAGE_NAME))
+            XposedHelpers.findAndHookMethod(Common.ACTIVITY_NAME, lpparam.classLoader, "isModuleEnabled", enableActivityHook);
     }
 
     @Override
