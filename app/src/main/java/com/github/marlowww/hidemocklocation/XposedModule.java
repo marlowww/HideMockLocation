@@ -2,7 +2,6 @@ package com.github.marlowww.hidemocklocation;
 
 import android.content.ContentResolver;
 import android.provider.Settings;
-import android.util.Log;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -91,8 +90,6 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
         hideAllowMockSettingHook = new XC_ProcessNameMethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                boolean i = isHidingEnabled();
-                Log.i("HOOKER", "Hiding: "+String.valueOf(i));
                 if (isHidingEnabled()) {
                     String methodName = param.method.getName();
                     String setting = (String) param.args[1];
