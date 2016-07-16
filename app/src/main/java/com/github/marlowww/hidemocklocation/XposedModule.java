@@ -10,6 +10,7 @@ import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
 import de.robv.android.xposed.XSharedPreferences;
+import de.robv.android.xposed.XposedBridge;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
 
@@ -61,6 +62,8 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
+        XposedBridge.log(String.format("HML: Loaded Package | Package: %s Process: %s", lpparam.packageName, lpparam.processName));
+
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getString",
                 ContentResolver.class, String.class, hideAllowMockSettingHook.init(lpparam.processName));
 
@@ -77,13 +80,18 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
             XposedHelpers.findAndHookMethod("android.location.Location", lpparam.classLoader,
                     "isFromMockProvider", hideMockProviderHook.init(lpparam.processName));
 
+
         // inform Activity that Xposed module is enabled
-        if(lpparam.packageName.equals(Common.PACKAGE_NAME))
+        if(lpparam.packageName.equals(Common.PACKAGE_NAME)) {
+            XposedBridge.log(String.format("HML: Self hooking | Package: %s Process: %s", lpparam.packageName, lpparam.processName));
             XposedHelpers.findAndHookMethod(Common.ACTIVITY_NAME, lpparam.classLoader, "isModuleEnabled", enableActivityHook);
+        }
     }
 
     @Override
     public void initZygote(StartupParam startupParam) throws Throwable {
+        XposedBridge.log("HML: Running");
+
         prefs = new XSharedPreferences(Common.PACKAGE_NAME, Common.PACKAGE_PREFERENCES);
         prefs.makeWorldReadable();
 
