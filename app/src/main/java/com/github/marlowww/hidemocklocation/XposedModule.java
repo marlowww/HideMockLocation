@@ -62,7 +62,7 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
-        XposedBridge.log(String.format("HML: Loaded Package | Package: %s Process: %s", lpparam.packageName, lpparam.processName));
+        XposedBridge.log(String.format("%s: Loaded Package | Package: %s Process: %s", Common.PACKAGE_NAME, lpparam.packageName, lpparam.processName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getString",
                 ContentResolver.class, String.class, hideAllowMockSettingHook.init(lpparam.processName));
@@ -83,14 +83,14 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
 
         // inform Activity that Xposed module is enabled
         if(lpparam.packageName.equals(Common.PACKAGE_NAME)) {
-            XposedBridge.log(String.format("HML: Self hooking | Package: %s Process: %s", lpparam.packageName, lpparam.processName));
+            XposedBridge.log(String.format("%s: Self hooking | Package: %s Process: %s", Common.PACKAGE_NAME, lpparam.packageName, lpparam.processName));
             XposedHelpers.findAndHookMethod(Common.ACTIVITY_NAME, lpparam.classLoader, "isModuleEnabled", enableActivityHook);
         }
     }
 
     @Override
     public void initZygote(StartupParam startupParam) throws Throwable {
-        XposedBridge.log("HML: Running");
+        XposedBridge.log(String.format("%s: Running", Common.PACKAGE_NAME));
 
         prefs = new XSharedPreferences(Common.PACKAGE_NAME, Common.PACKAGE_PREFERENCES);
         prefs.makeWorldReadable();
@@ -100,6 +100,7 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 if (isHidingEnabled()) {
                     String methodName = param.method.getName();
+                    XposedBridge.log(String.format("%s: Hooking | Method: %s", Common.PACKAGE_NAME, methodName));
                     String setting = (String) param.args[1];
                     if (setting.equals(Settings.Secure.ALLOW_MOCK_LOCATION)) {
                         switch (methodName) {
@@ -134,6 +135,7 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
         enableActivityHook = new XC_MethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                XposedBridge.log(String.format("%s: Self-Hooking | Changing result", Common.PACKAGE_NAME));
                 param.setResult(true);
             }
         };
