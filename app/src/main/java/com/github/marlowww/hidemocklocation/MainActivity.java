@@ -130,7 +130,9 @@ public class MainActivity extends AppCompatActivity {
 
     // Return true if XposedModule is enabled (self hook)
     private boolean isModuleEnabled() {
-        return false;
+        // Using just "return false;" doesn't work on all devices. ART can optimize this,
+        // placing inline "false" directly in code, which prevents Xposed self-hook from working.
+        return Boolean.valueOf(false);
     }
 
     private Common.ListType getListType() {
@@ -226,8 +228,6 @@ public class MainActivity extends AppCompatActivity {
                 startActivity(browserIntent);
                 return true;
             default:
-                // If we got here, the user's action was not recognized.
-                // Invoke the superclass to handle it.
                 return super.onOptionsItemSelected(item);
 
         }

@@ -13,15 +13,6 @@ public class AppItem {
         this(name, icon, packageName, false);
     }
 
-    @Override
-    public String toString() {
-        return "AppItem{" +
-                "name=" + name +
-                ", icon=" + icon +
-                ", isChecked=" + isChecked +
-                '}';
-    }
-
     public AppItem(CharSequence name, Drawable icon, String packageName, boolean isChecked) {
         this.name = name;
         this.icon = icon;
@@ -47,5 +38,14 @@ public class AppItem {
 
     public CharSequence getName() {
         return name;
+    }
+
+    @Override
+    public String toString() {
+        return "AppItem{" +
+                "name=" + name +
+                ", icon=" + icon +
+                ", isChecked=" + isChecked +
+                '}';
     }
 }

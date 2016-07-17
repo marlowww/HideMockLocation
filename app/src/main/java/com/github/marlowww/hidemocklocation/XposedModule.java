@@ -9,6 +9,7 @@ import java.util.Set;
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
 import de.robv.android.xposed.XC_MethodHook;
+import de.robv.android.xposed.XC_MethodReplacement;
 import de.robv.android.xposed.XSharedPreferences;
 import de.robv.android.xposed.XposedHelpers;
 import de.robv.android.xposed.callbacks.XC_LoadPackage;
@@ -20,7 +21,6 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
 
     public XC_ProcessNameMethodHook hideAllowMockSettingHook;
     public XC_ProcessNameMethodHook hideMockProviderHook;
-    public XC_MethodHook enableActivityHook;
 
     class XC_ProcessNameMethodHook extends XC_MethodHook {
 
@@ -77,9 +77,10 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
             XposedHelpers.findAndHookMethod("android.location.Location", lpparam.classLoader,
                     "isFromMockProvider", hideMockProviderHook.init(lpparam.processName));
 
-        // inform Activity that Xposed module is enabled
+        // Self hook - informing Activity that Xposed module is enabled
         if(lpparam.packageName.equals(Common.PACKAGE_NAME))
-            XposedHelpers.findAndHookMethod(Common.ACTIVITY_NAME, lpparam.classLoader, "isModuleEnabled", enableActivityHook);
+            XposedHelpers.findAndHookMethod(Common.ACTIVITY_NAME, lpparam.classLoader, "isModuleEnabled",
+                    XC_MethodReplacement.returnConstant(true));
     }
 
     @Override
@@ -120,13 +121,6 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                 if(isHidingEnabled())
                     param.setResult(false);
-            }
-        };
-
-        enableActivityHook = new XC_MethodHook() {
-            @Override
-            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                param.setResult(true);
             }
         };
     }
