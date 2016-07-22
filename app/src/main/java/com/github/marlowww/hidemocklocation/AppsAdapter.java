@@ -25,17 +25,7 @@ interface OnAppCheckChangedListener {
 
 public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.ViewHolder> {
 
-    @BindString(R.string.whitelist)
-    String whitelist;
-    @BindString(R.string.blacklist)
-    String blacklist;
-
-    private AppItem[] apps;
-    private List<OnAppCheckChangedListener> listeners = new ArrayList<>();
-
-    public void setOnCheckChangedListener(OnAppCheckChangedListener toAdd) {
-        listeners.add(toAdd);
-    }
+    private static final String TAG = AppsAdapter.class.getName();
 
     public static class ViewHolder extends RecyclerView.ViewHolder {
         @BindView(R.id.item_icon)
@@ -49,10 +39,32 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.ViewHolder> {
             super(v);
             ButterKnife.bind(this, v);
         }
+
+        public void bind(AppItem app) {
+            itemTitle.setText(app.getName());
+            itemIcon.setImageDrawable(app.getIcon());
+            itemCheckBox.setChecked(app.isChecked());
+            itemCheckBox.setTag(app);
+        }
     }
 
-    public AppsAdapter(AppItem[] apps) {
+    @BindString(R.string.whitelist)
+    String whitelist;
+    @BindString(R.string.blacklist)
+    String blacklist;
+
+    private List<AppItem> apps;
+    private List<AppItem> allApps;
+
+    private List<OnAppCheckChangedListener> listeners = new ArrayList<>();
+
+    public void setOnCheckChangedListener(OnAppCheckChangedListener toAdd) {
+        listeners.add(toAdd);
+    }
+
+    public AppsAdapter(List<AppItem> apps) {
         this.apps = apps;
+        this.allApps = new ArrayList<>(apps);
     }
 
     @Override
@@ -64,13 +76,10 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.ViewHolder> {
         return new ViewHolder(v);
     }
 
-    // Replace the contents of a view (invoked by the layout manager)
     @Override
     public void onBindViewHolder(ViewHolder holder, int position) {
-        holder.itemTitle.setText(apps[position].getName());
-        holder.itemIcon.setImageDrawable(apps[position].getIcon());
-        holder.itemCheckBox.setChecked(apps[position].isChecked());
-        holder.itemCheckBox.setTag(apps[position]);
+        AppItem app = apps.get(position);
+        holder.bind(app);
 
         holder.itemCheckBox.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -79,31 +88,54 @@ public class AppsAdapter extends RecyclerView.Adapter<AppsAdapter.ViewHolder> {
                 AppItem item = (AppItem) cb.getTag();
                 item.setChecked(cb.isChecked());
 
+                // Setting checks in all apps
+                allApps.get(allApps.indexOf(item)).setChecked(cb.isChecked());
+
                 for (OnAppCheckChangedListener l : listeners)
                     l.appsItemCheckChanged(item);
             }
         });
-
     }
 
     @Override
     public int getItemCount() {
-        return apps.length;
+        return apps.size();
     }
 
-    public AppItem[] getApps() {
+    public List<AppItem> getApps() {
         return apps;
     }
 
-    public Set<String> getCheckedAppsPackageName() {
+    public List<AppItem> getAllApps() {
+        return allApps;
+    }
+
+    public Set<String> getCheckedAppsPackageNames() {
         Set<String> checkedApps = new HashSet<>();
 
-        for (AppItem item : apps) {
+        for (AppItem item : allApps) {
             if (item.isChecked())
                 checkedApps.add(item.getPackageName());
         }
         return checkedApps;
     }
 
+    public void filter(String text) {
+        if(text.isEmpty()){
+            apps.clear();
+            apps.addAll(allApps);
+        }
+        else {
+            ArrayList<AppItem> result = new ArrayList<>();
+            text = text.toLowerCase();
+            for (AppItem item : allApps) {
+                if (item.getName().toString().toLowerCase().contains(text))
+                    result.add(item);
+            }
+            apps.clear();
+            apps.addAll(result);
+        }
+        notifyDataSetChanged();
+    }
 }
 

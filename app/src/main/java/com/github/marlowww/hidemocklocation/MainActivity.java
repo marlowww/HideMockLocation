@@ -4,12 +4,15 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
+import android.graphics.drawable.Drawable;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.support.v7.widget.SearchView;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
@@ -22,6 +25,8 @@ import android.widget.RelativeLayout;
 import android.widget.TextView;
 
 import java.io.File;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -34,6 +39,8 @@ import butterknife.OnCheckedChanged;
 
 
 public class MainActivity extends AppCompatActivity {
+
+    private static final String TAG = MainActivity.class.getName();
 
     @BindView(R.id.toolbar)
     Toolbar toolbarView;
@@ -69,69 +76,79 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
+        // Load settings
+        prefs = getSharedPreferences(Common.PACKAGE_PREFERENCES, MODE_WORLD_READABLE);
+
+        final Common.ListType listType = getListType();
+        final Set<String> checkedApps = prefs.getStringSet(listType.toString(), new HashSet<String>());
+
+
+        // Get information about apps
+        final PackageManager pm = getPackageManager();
+        final Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+
+        final List<ResolveInfo> infoList = new ArrayList<>(pm.queryIntentActivities(mainIntent, 0));
+        Collections.sort(infoList, new ResolveInfo.DisplayNameComparator(pm));
+
+        final ArrayList<AppItem> apps = new ArrayList<>(infoList.size());
+
+        int checked = 0; // Checked apps counter
+        for (ResolveInfo info : infoList) {
+            if (info.activityInfo != null) {
+                final CharSequence label = info.loadLabel(pm);
+                final Drawable icon = info.loadIcon(pm);
+
+                if (checkedApps.contains(info.activityInfo.packageName)) {
+                    apps.add(new AppItem(label, icon, info.activityInfo.packageName, true));
+                    checked++;
+                } else
+                    apps.add(new AppItem(label, icon, info.activityInfo.packageName));
+            }
+        }
+
+        // End of splash screen
+        setTheme(R.style.AppTheme);
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(toolbarView);
+
         enableColorStatusBar();
+
+        setListSwitch(listType);
+
+        adapter = new AppsAdapter(apps);
+        adapter.setOnCheckChangedListener(new OnAppCheckChangedListener() {
+            @Override
+            public void appsItemCheckChanged(AppItem item) {
+                Common.ListType listType = getListType();
+                Set<String> checkedApps = adapter.getCheckedAppsPackageNames();
+
+                appsCountView.setText(getString(R.string.checked, checkedApps.size()));
+
+                SharedPreferences.Editor editor = prefs.edit();
+                editor.putStringSet(listType.toString(), checkedApps);
+                editor.apply();
+            }
+        });
 
         appListView.setHasFixedSize(true);
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         appListView.setLayoutManager(layoutManager);
-        prefs = getSharedPreferences(Common.PACKAGE_PREFERENCES, MODE_WORLD_READABLE);
-
-        Common.ListType listType = getListType();
-        Set<String> checkedApps = prefs.getStringSet(listType.toString(), new HashSet<String>());
-        setListSwitch(listType);
+        appListView.setAdapter(adapter);
 
 
-        Bundle extras = getIntent().getExtras();
-        if (extras != null) {
-            List<ResolveInfo> appsInfo = extras.getParcelableArrayList(Common.INTENT_APPS_LIST);
-            if (appsInfo != null) {
-                PackageManager pm = getPackageManager();
-                AppItem[] apps = new AppItem[appsInfo.size()];
-                
-                int i = 0;
-                int checked = 0;
-                for (ResolveInfo info : appsInfo) {
-                    if (checkedApps.contains(info.activityInfo.packageName)) {
-                        apps[i++] = new AppItem(info.loadLabel(pm), info.loadIcon(pm),
-                                info.activityInfo.packageName, true);
-                        checked++;
-                    }
-                    else
-                        apps[i++] = new AppItem(info.loadLabel(pm), info.loadIcon(pm),
-                                info.activityInfo.packageName);
-                }
-
-                appsCountView.setText(getString(R.string.checked, checked));
-                appsCountView.setTextColor(listType.equals(Common.ListType.WHITELIST)
-                        ? accentColor : darkColor);
-                
-                adapter = new AppsAdapter(apps);
-                adapter.setOnCheckChangedListener(new OnAppCheckChangedListener() {
-                    @Override
-                    public void appsItemCheckChanged(AppItem item) {
-                        Common.ListType listType = getListType();
-                        Set<String> checkedApps = adapter.getCheckedAppsPackageName();
-
-                        appsCountView.setText(getString(R.string.checked, checkedApps.size()));
-
-                        SharedPreferences.Editor editor = prefs.edit();
-                        editor.putStringSet(listType.toString(), checkedApps);
-                        editor.apply();
-                    }
-                });
-                appListView.setAdapter(adapter);
-            }
-        }
+        appsCountView.setText(getString(R.string.checked, checked));
+        appsCountView.setTextColor(listType.equals(Common.ListType.WHITELIST)
+                ? accentColor : darkColor);
     }
 
     // Return true if XposedModule is enabled (self hook)
+    @SuppressWarnings("all")
     private boolean isModuleEnabled() {
         // Using just "return false;" doesn't work on all devices. ART can optimize this,
-        // placing inline "false" directly in code, which prevents Xposed self-hook from working.
+        // by placing inline "false" directly in code, which prevents Xposed self-hook from working.
         return Boolean.valueOf(false);
     }
 
@@ -190,7 +207,8 @@ public class MainActivity extends AppCompatActivity {
             setListSwitch(listType);
             appsCountView.setTextColor(listType.equals(Common.ListType.WHITELIST) ? accentColor : darkColor);
 
-            AppItem[] apps = adapter.getApps();
+            List<AppItem> apps = adapter.getApps();
+            List<AppItem> allApps = adapter.getAllApps();
 
             SharedPreferences.Editor editor = prefs.edit();
             editor.putString(Common.PREF_LIST_TYPE, listType.toString());
@@ -199,16 +217,22 @@ public class MainActivity extends AppCompatActivity {
             Set<String> checkedApps = prefs.getStringSet(listType.toString(), new HashSet<String>());
 
             // Count again to prevent situation when in prefs are uninstalled apps
+            // Change all apps in adapter
             int checked = 0;
-            for (AppItem app : apps) {
+            for (AppItem app : allApps) {
                 if (checkedApps.contains(app.getPackageName())) {
                     app.setChecked(true);
                     checked++;
-                }
-                else app.setChecked(false);
+                } else app.setChecked(false);
             }
-            appsCountView.setText(getString(R.string.checked, checked));
+            // Change currently viewed apps
+            for (AppItem app : apps) {
+                if (checkedApps.contains(app.getPackageName())) {
+                    app.setChecked(true);
+                } else app.setChecked(false);
+            }
             adapter.notifyDataSetChanged();
+            appsCountView.setText(getString(R.string.checked, checked));
         }
     }
 
@@ -216,20 +240,39 @@ public class MainActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         MenuInflater inflater = getMenuInflater();
         inflater.inflate(R.menu.action_menu, menu);
+
+        final MenuItem searchItem = menu.findItem(R.id.action_search);
+        final SearchView searchView = (SearchView) MenuItemCompat.getActionView(searchItem);
+        // Resize searchView
+        searchView.setMaxWidth(Integer.MAX_VALUE);
+
+        searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
+            @Override
+            public boolean onQueryTextSubmit(String query) {;
+                adapter.filter(query);
+                searchView.clearFocus();
+                return true;
+            }
+
+            @Override
+            public boolean onQueryTextChange(String newText) {
+                adapter.filter(newText);
+                return true;
+            }
+        });
         return true;
     }
 
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         switch (item.getItemId()) {
-            case R.id.donate:
+            case R.id.action_donate:
                 Uri uri = Uri.parse(donateUrlStr);
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(browserIntent);
                 return true;
             default:
                 return super.onOptionsItemSelected(item);
-
         }
     }
 }

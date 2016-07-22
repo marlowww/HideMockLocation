@@ -27,9 +27,8 @@ public class Common {
 
     public static final String PREF_LIST_TYPE = "list_type";
 
+    public static final String GMS_MOCK_KEY = "mockLocation"; // FusedLocationProviderApi.KEY_MOCK_LOCATION
+
     public static final int SDK = Build.VERSION.SDK_INT;
     public static final boolean JB_MR2_NEWER = SDK >= Build.VERSION_CODES.JELLY_BEAN_MR2;
-
-    public static final String INTENT_APPS_LIST = "apps_resolve_info_list";
-
 }

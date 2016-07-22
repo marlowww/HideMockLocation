@@ -48,4 +48,19 @@ public class AppItem {
                 ", isChecked=" + isChecked +
                 '}';
     }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        AppItem appItem = (AppItem) o;
+
+        return packageName.equals(appItem.packageName);
+    }
+
+    @Override
+    public int hashCode() {
+        return packageName.hashCode();
+    }
 }

@@ -7,15 +7,21 @@
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
         <item name="colorControlActivated">@color/colorAccent</item>
-        <item name="android:textColorPrimary">#fff</item>
+        <item name="android:textColorPrimary">@color/colorDark</item>
         <item name="colorSwitchThumbNormal">@color/colorDark</item>
         <item name="android:actionMenuTextColor">#fff</item>
-        <item name="android:textColor">#fff</item>
+        <item name="android:textColor">@color/colorDark</item>
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
     </style>
 
     <style name="AppTheme.ActionBar" parent="ThemeOverlay.AppCompat.Dark.ActionBar">
         <item name="android:actionMenuTextColor">#fff</item>
         <item name="android:textColor">#fff</item>
-    </style>`
+    </style>
+
+    <style name="AppTheme.Launcher">
+        <item name="android:windowBackground">@drawable/splash_screen</item>
+    </style>
 
 </resources>
