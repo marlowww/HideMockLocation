@@ -2,11 +2,11 @@ package com.github.marlowww.hidemocklocation;
 
 import android.graphics.drawable.Drawable;
 
-public class AppItem {
+class AppItem {
 
-    private CharSequence name;
-    private String packageName;
-    private Drawable icon;
+    private final CharSequence name;
+    private final String packageName;
+    private final Drawable icon;
     private boolean isChecked;
 
     public AppItem(CharSequence name, Drawable icon, String packageName) {

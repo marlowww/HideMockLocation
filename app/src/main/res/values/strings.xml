@@ -9,4 +9,9 @@
     <string name="donate_url">https://www.paypal.com/cgi-bin/webscr?cmd=_donations&amp;business=H33TB2KVKVA28&amp;lc=US&amp;item_name=Hide%20Mock%20Location%20Donation&amp;item_number=Hide%20Mock%20Location&amp;currency_code=USD&amp;bn=PP%2dDonationsBF%3abtn_donateCC_LG%2egif%3aNonHosted</string>
     <string name="search">Search</string>
     <string name="icon">Icon</string>
+    <string name="settings">Settings</string>
+    <string name="general">General</string>
+    <string name="show_icon">Show app icon in launcher</string>
+    <string name="gms_whitelist">Whitelist Google Play Services</string>
+    <string name="gms_whitelist_sub">When unchecked, some whitelisted apps may not see that location is mocked.</string>
 </resources>

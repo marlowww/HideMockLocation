@@ -6,7 +6,6 @@ import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
@@ -15,12 +14,11 @@ import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.SearchView;
 import android.support.v7.widget.SwitchCompat;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.Window;
-import android.view.WindowManager;
 import android.widget.RelativeLayout;
 import android.widget.TextView;
 
@@ -113,9 +111,6 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
         setSupportActionBar(toolbarView);
-
-        enableColorStatusBar();
-
         setListSwitch(listType);
 
         adapter = new AppsAdapter(apps);
@@ -144,13 +139,6 @@ public class MainActivity extends AppCompatActivity {
                 ? accentColor : darkColor);
     }
 
-    // Return true if XposedModule is enabled (self hook)
-    @SuppressWarnings("all")
-    private boolean isModuleEnabled() {
-        // Using just "return false;" doesn't work on all devices. ART can optimize this,
-        // by placing inline "false" directly in code, which prevents Xposed self-hook from working.
-        return Boolean.valueOf(false);
-    }
 
     private Common.ListType getListType() {
         String listTypeStr = prefs.getString(Common.PREF_LIST_TYPE,
@@ -189,14 +177,6 @@ public class MainActivity extends AppCompatActivity {
         File prefsFile = new File(prefsDir, Common.PACKAGE_PREFERENCES + ".xml");
         if (prefsFile.exists()) {
             prefsFile.setReadable(true, false);
-        }
-    }
-
-    private void enableColorStatusBar() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            Window window = getWindow();
-            window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
-            window.setStatusBarColor(primaryDarkColor);
         }
     }
 
@@ -248,7 +228,7 @@ public class MainActivity extends AppCompatActivity {
 
         searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
             @Override
-            public boolean onQueryTextSubmit(String query) {;
+            public boolean onQueryTextSubmit(String query) {
                 adapter.filter(query);
                 searchView.clearFocus();
                 return true;
@@ -270,9 +250,22 @@ public class MainActivity extends AppCompatActivity {
                 Uri uri = Uri.parse(donateUrlStr);
                 Intent browserIntent = new Intent(Intent.ACTION_VIEW, uri);
                 startActivity(browserIntent);
-                return true;
+                break;
+            case R.id.action_settings:
+                Intent i = new Intent(this, SettingsActivity.class);
+                startActivity(i);
+                break;
             default:
                 return super.onOptionsItemSelected(item);
         }
+        return true;
+    }
+
+    // Self-hook method
+    // Logging and Boolean object are present to avoid ART optimization
+    @SuppressWarnings("all")
+    private static boolean isModuleEnabled() {
+        Log.i(TAG, "Xposed part not active.");
+        return Boolean.valueOf(false);
     }
 }

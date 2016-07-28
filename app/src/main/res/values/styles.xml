@@ -24,4 +24,10 @@
         <item name="android:windowBackground">@drawable/splash_screen</item>
     </style>
 
+    <style name="SettingsTheme" parent="AppTheme">
+        <item name="preferenceTheme">@style/PreferenceThemeOverlay.v14.Material</item>
+        <item name="colorAccent">@color/preference_accent</item>
+        <item name="dialogTheme">@style/PreferenceFixTheme.Light.Dialog</item>
+        <item name="alertDialogTheme">@style/PreferenceFixTheme.Light.Dialog.Alert</item>
+    </style>
 </resources>

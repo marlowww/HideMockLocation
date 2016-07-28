@@ -17,7 +17,6 @@
         android:scaleType="centerInside"
         android:adjustViewBounds="true"
         android:layout_centerVertical="true"
-        android:layout_marginRight="@dimen/activity_horizontal_margin"
         android:layout_marginEnd="@dimen/activity_horizontal_margin"
         android:contentDescription="@string/icon"
     />
@@ -26,7 +25,6 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:id="@+id/item_checkBox"
-        android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"
         android:layout_centerVertical="true"
         android:theme="@style/AppTheme"
@@ -36,12 +34,11 @@
         android:id="@+id/item_title"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_toRightOf="@id/item_icon"
         android:layout_toEndOf="@id/item_icon"
         android:layout_centerVertical="true"
-        android:layout_toLeftOf="@id/item_checkBox"
         android:layout_toStartOf="@id/item_checkBox"
         android:gravity="start"
+        android:textDirection="locale"
     />
 
 </RelativeLayout>

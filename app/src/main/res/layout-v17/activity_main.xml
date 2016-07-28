@@ -3,8 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
     android:orientation="vertical"
+    android:layout_height="match_parent"
     tools:context="com.github.marlowww.hidemocklocation.MainActivity">
 
     <android.support.v7.widget.Toolbar
@@ -59,10 +59,8 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
                 android:layout_centerVertical="true"
-                android:layout_marginLeft="8dp"
                 android:layout_marginStart="8dp"
                 android:textStyle="bold"
                 android:id="@+id/apps_count"
@@ -71,7 +69,6 @@
             <android.support.v7.widget.SwitchCompat
                 android:id="@+id/list_type"
                 android:layout_width="match_parent"
-                android:layout_toLeftOf="@id/apps_count"
                 android:layout_toStartOf="@id/apps_count"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
@@ -81,6 +78,7 @@
                 android:paddingTop="@dimen/activity_vertical_margin"
                 android:paddingBottom="@dimen/activity_vertical_margin"
                 android:gravity="start"
+                android:textDirection="locale"
             />
 
         </RelativeLayout>

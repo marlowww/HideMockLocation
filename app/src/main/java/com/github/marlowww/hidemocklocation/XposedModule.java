@@ -24,15 +24,16 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
     public XC_ProcessNameMethodHook hideMockProviderHook;
     public XC_ProcessNameMethodHook hideMockGooglePlayServicesHook;
 
-
     // Hook with additional member - processName
     // Used to whitelisting/blacklisting apps
     class XC_ProcessNameMethodHook extends XC_MethodHook {
 
-        private String processName;
+        String processName;
+        String packageName;
 
-        private XC_MethodHook init(String processName){
+        private XC_MethodHook init(String processName, String packageName){
             this.processName = processName;
+            this.packageName = packageName;
             return this;
         }
 
@@ -42,11 +43,11 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
 
             switch (listType) {
                 case BLACKLIST:
-                    if (apps.contains(processName))
+                    if (apps.contains(processName) || apps.contains(packageName))
                         return true;
                     break;
                 case WHITELIST:
-                    if (!apps.contains(processName))
+                    if (!apps.contains(processName) && !apps.contains(packageName))
                         return true;
             }
             return false;
@@ -54,40 +55,49 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
     }
 
     public Common.ListType getListType() {
-        prefs.reload();
         return prefs.getString(Common.PREF_LIST_TYPE, Common.ListType.BLACKLIST.toString())
             .equals(Common.ListType.BLACKLIST.toString())
                 ? Common.ListType.BLACKLIST : Common.ListType.WHITELIST;
     }
 
     public Set<String> getAppList(Common.ListType type) {
-        prefs.reload();
         return prefs.getStringSet(type.toString(), new HashSet<String>(0));
+    }
+
+    public void reloadPrefs() {
+        prefs.reload();
     }
 
     @Override
     public void handleLoadPackage(XC_LoadPackage.LoadPackageParam lpparam) throws Throwable {
         // Hooking Settings.Secure API methods instead of internal methods - longer code, but more SDK independent.
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getString",
-                ContentResolver.class, String.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getInt",
-                ContentResolver.class, String.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getInt",
-                ContentResolver.class, String.class, int.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class, int.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getFloat",
-                ContentResolver.class, String.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getFloat",
-                ContentResolver.class, String.class, float.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class, float.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getLong",
-                ContentResolver.class, String.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         XposedHelpers.findAndHookMethod("android.provider.Settings.Secure", lpparam.classLoader, "getLong",
-                ContentResolver.class, String.class, long.class, hideAllowMockSettingHook.init(lpparam.processName));
+                ContentResolver.class, String.class, long.class,
+                hideAllowMockSettingHook.init(lpparam.processName, lpparam.packageName));
 
         // Additional info - not implemented - probably will not be implemented in future:
         //
@@ -97,12 +107,12 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
 
         // Google Play Services
         XposedHelpers.findAndHookMethod("android.location.Location", lpparam.classLoader, "getExtras",
-                hideMockGooglePlayServicesHook.init(lpparam.processName));
+                hideMockGooglePlayServicesHook.init(lpparam.processName, lpparam.packageName));
 
         // New way of checking if location is mocked, SDK 18+
         if (Common.JB_MR2_NEWER)
             XposedHelpers.findAndHookMethod("android.location.Location", lpparam.classLoader,
-                    "isFromMockProvider", hideMockProviderHook.init(lpparam.processName));
+                    "isFromMockProvider", hideMockProviderHook.init(lpparam.processName, lpparam.packageName));
 
         // Self hook - informing Activity that Xposed module is enabled
         if(lpparam.packageName.equals(Common.PACKAGE_NAME))
@@ -118,25 +128,29 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
         hideAllowMockSettingHook = new XC_ProcessNameMethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                if (isHidingEnabled()) {
-                    String methodName = param.method.getName();
-                    String setting = (String) param.args[1];
-                    if (setting.equals(Settings.Secure.ALLOW_MOCK_LOCATION)) {
-                        switch (methodName) {
-                            case "getInt":
-                                param.setResult(0);
-                                break;
-                            case "getString":
-                                param.setResult("0");
-                                break;
-                            case "getFloat":
-                                param.setResult(0.0f);
-                                break;
-                            case "getLong":
-                                param.setResult(0L);
-                                break;
-                            default:
-                                break;
+                if (!Common.SYSTEM_WHITELIST.contains(this.processName) &&
+                        !Common.SYSTEM_WHITELIST.contains(this.packageName)) {
+                    reloadPrefs();
+                    if (isHidingEnabled()) {
+                        String methodName = param.method.getName();
+                        String setting = (String) param.args[1];
+                        if (setting.equals(Settings.Secure.ALLOW_MOCK_LOCATION)) {
+                            switch (methodName) {
+                                case "getInt":
+                                    param.setResult(0);
+                                    break;
+                                case "getString":
+                                    param.setResult("0");
+                                    break;
+                                case "getFloat":
+                                    param.setResult(0.0f);
+                                    break;
+                                case "getLong":
+                                    param.setResult(0L);
+                                    break;
+                                default:
+                                    break;
+                            }
                         }
                     }
                 }
@@ -146,14 +160,19 @@ public class XposedModule implements IXposedHookZygoteInit, IXposedHookLoadPacka
         hideMockProviderHook = new XC_ProcessNameMethodHook() {
             @Override
             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                if(isHidingEnabled())
-                    param.setResult(false);
+                reloadPrefs();
+                boolean isGMSWhitelisted = prefs.getBoolean(Common.PREF_GMS_WHITELISTED, false);
+                if (!isGMSWhitelisted || !this.packageName.equals(Common.GMS_PACKAGE)) {
+                    if(isHidingEnabled())
+                        param.setResult(false);
+                }
             }
         };
 
         hideMockGooglePlayServicesHook = new XC_ProcessNameMethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                reloadPrefs();
                 if(isHidingEnabled()) {
                     Bundle extras = (Bundle) param.getResult();
                     if (extras != null && extras.getBoolean(Common.GMS_MOCK_KEY))
